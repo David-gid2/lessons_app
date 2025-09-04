@@ -32,7 +32,7 @@ export const App = () => {
   const sendData = async () => {
     try {
       const response = await axios.post(
-        "https://0e3f7e49cc62.ngrok-free.app/api/lesson/get_lesson", // Заміни на свій бекенд
+        "/api/lesson/get_lesson", // Заміни на свій бекенд
         {
           tg_id: user?.id,
           link_id: startParam,
