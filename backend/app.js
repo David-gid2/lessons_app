@@ -4,7 +4,9 @@ import userRouter from './routes/userRouter.js';
 import lesRouter from './routes/lesRouter.js';
 
 const app = express();
-const port = 4200;
+const port = 4000;
+
+
 
 // Для роботи з JSON
 app.use(express.json());
@@ -23,7 +25,7 @@ app.use(express.json());
 //);
 
 app.use('/users', userRouter);
-app.use('/lesson', lesRouter);
+app.use('/api/lesson', lesRouter);
 
 
 

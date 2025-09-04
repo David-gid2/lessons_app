@@ -1,5 +1,4 @@
 import "../css/Main.css";
-import { useEffect, useState } from "react";
 
 
 import polygon from "../assets/polygon.png";
@@ -7,22 +6,7 @@ import brainImg from "../assets/Brain.png";
 import helpingImg from "../assets/Helping.png";
 
 
-export const Main = () => {
-
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    // Telegram обʼєкт доступний після підключення скрипта
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      
-      // initDataUnsafe містить інформацію про користувача
-      setUser(tg.initDataUnsafe?.user || null);
-
-      // Можна також виконати expand(), щоб додаток зайняв весь екран
-    }
-  }, []);
-
+export const Main = (props) => {
 
   return (
     <div className="app">
@@ -34,7 +18,7 @@ export const Main = () => {
             <div className="Img">
               <img src={brainImg} alt="Brain" className="brain" />
             </div>
-            <div className="text"><p>{user?.id}</p></div>
+            <div className="text"><p>{props.initData}</p></div>
             <div className="left-box">
               <img className="poligon" src={polygon} alt="polygon" />
             </div>
@@ -43,7 +27,7 @@ export const Main = () => {
             <div className="Img">
               <img src={helpingImg} alt="Brain" className="brain" />
             </div>
-            <div className="text"><p>{user?.first_name}</p></div>
+            <div className="text"><p>{props.hash}</p></div>
             <div className="left-box">
               <img className="poligon" src={polygon} alt="polygon" />
             </div>
