@@ -27,7 +27,7 @@ export const App = () => {
 
   const sendData = async () => {
   try {
-    const response = await axios.post("/api/lesson/get_lesson", {
+    const response = await axios.post("https://818543bf7de8.ngrok-free.app/api/lesson/get_lesson", {
       user_id: user?.id,
       link_id: startParam,
     });

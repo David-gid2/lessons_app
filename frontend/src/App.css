@@ -3,7 +3,7 @@
 body {
   margin: 0;
   height: 100vh;
-  background: url("/bg.jpg") no-repeat center center;
+  background: url("/img/bg.jpg") no-repeat center center;
   background-size: cover;
   font-family: "Roboto Condensed", sans-serif;
   overflow: hidden;

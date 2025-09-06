@@ -23,7 +23,7 @@ export const Main = ({ lessons, onFileClick }) => {
                 className="left-box"
                 onClick={() => onFileClick(file.file_url)} // 👈 передаємо напряму URL
               >
-                <img className="poligon" src={polygon} alt="polygon" />
+                <img className="poligon" src="/img/polygon.png" alt="polygon" />
               </div>
             </div>
           ))}
