@@ -3,73 +3,74 @@ import axios from "axios";
 
 import "./App.css";
 import { Main } from "./components/Main";
+import { FileViewer } from "./components/FileViewer";
+import { NoLessonPage } from "./components/NoLessonPage";
 
 export const App = () => {
-  const [user, setUser] = useState(null);        // Зберігаємо дані користувача з Telegram
-  const [startParam, setStartParam] = useState(null); // Зберігаємо start_param
-  const [answer, setAnswer] = useState(null);    // Відповідь від сервера
-  const [error, setError] = useState(null);      // Помилка при запиті
+  const [user, setUser] = useState(null);
+  const [startParam, setStartParam] = useState(null);
+  const [answer, setAnswer] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedUrl, setSelectedUrl] = useState(null); // 👈 тут зберігаємо саме посилання
 
-  // Отримуємо дані з Telegram WebApp
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
-
-      // Отримуємо користувача
       setUser(tg.initDataUnsafe?.user || null);
-
-      // Отримуємо start_param
       if (tg.initDataUnsafe?.start_param) {
         setStartParam(tg.initDataUnsafe.start_param);
       }
-
-      // Розгортаємо додаток на весь екран
       tg.expand();
     }
   }, []);
 
-  // Функція відправки даних на бекенд
   const sendData = async () => {
-    try {
-      const response = await axios.post(
-        "/api/lesson/get_lesson", // Заміни на свій бекенд
-        {
-          tg_id: user?.id,
-          link_id: startParam,
-        }
-      );
+  try {
+    const response = await axios.post("/api/lesson/get_lesson", {
+      tg_id: user?.id,
+      link_id: startParam,
+    });
 
-      // Зберігаємо відповідь від сервера
-      setAnswer(response.data);
-      setError(null);
-    } catch (err) {
-      console.error("Error sending data:", err);
+    setAnswer(response.data);
+    setError(null);
+  } catch (err) {
+    console.error("Error sending data:", err);
+
+    // якщо 404 або інша серверна помилка
+    if (err.response && err.response.status === 404) {
+      setAnswer(null); // немає даних
+      setError(null);  // щоб не показувати текст помилки
+    } else {
       setError("Не вдалося отримати дані з сервера");
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
-  // Викликаємо запит, коли є user і startParam
   useEffect(() => {
     if (user && startParam) {
       sendData();
     }
   }, [user, startParam]);
 
+  if (loading) return <p>Завантаження...</p>;
+  if (error) return <p>{error}</p>;
 
+  const hasLesson =
+    answer?.lesson && Array.isArray(answer.lesson.files) && answer.lesson.files.length > 0;
 
   return (
     <div className="App">
-      <Main initData={startParam}/>
-      {answer ? (
-        <pre>{JSON.stringify(answer, null, 2)}</pre>
+      {selectedUrl ? (
+        <FileViewer fileUrl={selectedUrl} onBack={() => setSelectedUrl(null)} />
+      ) : hasLesson ? (
+        <Main lessons={answer.lesson} onFileClick={setSelectedUrl} />
       ) : (
-        <p>Завантаження даних...</p>
+        <NoLessonPage />
       )}
-
     </div>
-    
-  )
+  );
 };
-// дописати логіку для відрисовки даних на сторінці Main.jsx 
-// створити веб перегеляд для файлів word, pdf які будуть в посиланню
-// та здати проект в блищий час 
+

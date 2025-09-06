@@ -1,39 +1,35 @@
 import "../css/Main.css";
-
-
 import polygon from "../assets/polygon.png";
-import brainImg from "../assets/Brain.png";
-import helpingImg from "../assets/Helping.png";
 
-
-export const Main = (props) => {
+export const Main = ({ lessons, onFileClick }) => {
+  const lesson = lessons;
 
   return (
     <div className="app">
       <div className="c1">
-        <h2>День 1</h2>
+        <h2>День {lesson.day}</h2>
         <div className="c2">
-          <h1>Матеріал до 1 дня</h1>
-          <div className="box">
-            <div className="Img">
-              <img src={brainImg} alt="Brain" className="brain" />
+          <h1>{lesson.tittle}</h1>
+
+          {lesson.files.map((file) => (
+            <div className="box" key={file.id}>
+              <div className="Img">
+                <img src={file.icon_url} alt={file.tittle} className="brain" />
+              </div>
+              <div className="text">
+                <p>{file.tittle}</p>
+              </div>
+              <div
+                className="left-box"
+                onClick={() => onFileClick(file.file_url)} // 👈 передаємо напряму URL
+              >
+                <img className="poligon" src={polygon} alt="polygon" />
+              </div>
             </div>
-            <div className="text"><p>{props.initData}</p></div>
-            <div className="left-box">
-              <img className="poligon" src={polygon} alt="polygon" />
-            </div>
-          </div>
-          <div className="box">
-            <div className="Img">
-              <img src={helpingImg} alt="Brain" className="brain" />
-            </div>
-            <div className="text"><p>{props.hash}</p></div>
-            <div className="left-box">
-              <img className="poligon" src={polygon} alt="polygon" />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
-  
-)};
+  );
+};
+
