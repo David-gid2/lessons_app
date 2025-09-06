@@ -1,163 +1,159 @@
 import db from "../db/connectdb.js";
-import createAnsver from "./createAnsver.js"
+import createAnswer from "./createAnsver.js"; // залишив твою назву, але краще виправити файл
+import TelegramBot from "node-telegram-bot-api";
+import dotenv from "dotenv";
 
-const searchUser = (tg_id) => {
-    return new Promise((resolve, reject) => {
-        const sql = 'SELECT * FROM users WHERE tg_id = ?';
-        db.get(sql, [tg_id], (err, row) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(!!row); // true якщо користувач знайдений
-            }
-        });
-    });
+dotenv.config();
+
+// ⚠️ Токен і чат-айді беремо з .env
+const TOKEN = process.env.TELEGRAM_TOKEN;
+const CHAT_ID = parseInt(process.env.TELEGRAM_CHAT_ID, 10);
+
+if (!TOKEN || !CHAT_ID) {
+    throw new Error("Не вказані TELEGRAM_TOKEN або TELEGRAM_CHAT_ID у .env");
+}
+
+const bot = new TelegramBot(TOKEN, { polling: false });
+
+// -------- Перевірка користувача у групі --------
+const validUser = async (user_id) => {
+    try {
+        const id = Number(user_id);
+        if (!Number.isInteger(id)) {
+            console.error("searchUser: user_id не число:", user_id);
+            return false;
+        }
+        const member = await bot.getChatMember(CHAT_ID, id);
+        return !(member.status === "left" || member.status === "kicked");
+    } catch (err) {
+        console.error("Telegram API error:", err.response?.body || err.message || err);
+        return false;
+    }
 };
 
+// -------- GET LESSON --------
 export const get_lesson = async (req, res) => {
-    const user_id = req.body.tg_id;
-    const link_id = req.body.link_id;
-
-    if (!user_id || !link_id) {
-        return res.status(400).json({ message: 'user_id та link_id обов\'язкові' });
-    }
-
     try {
-        const validUser = await searchUser(user_id);
+        const user_id = Number(req.body.user_id);
+        const link_id = req.body.link_id;
 
-        if (!validUser) {  // <-- тут перевіряємо правильну змінну
-            return res.status(404).json({ message: 'User undefined' });
+        if (!Number.isInteger(user_id) || !link_id) {
+            return res.status(400).json({ message: "Некоректний user_id або відсутній link_id" });
         }
 
-        const lesson = await createAnsver(link_id);
+        const isValid = await validUser(user_id);
+        if (!isValid) {
+            return res.status(404).json({ message: "User not found or not in group" });
+        }
 
+        const lesson = await createAnswer(link_id);
         if (!lesson) {
             return res.status(404).json({ message: "Lesson not found" });
         }
 
-        // Розпарсимо поле files, якщо воно є
-        if (lesson.files) {
+        // Якщо files рядок → парсимо
+        if (typeof lesson.files === "string") {
             try {
                 lesson.files = JSON.parse(lesson.files);
-            } catch (err) {
-                console.error("Помилка парсингу files:", err);
+            } catch {
                 lesson.files = [];
             }
         }
 
         return res.status(200).json({ lesson });
+    } catch (err) {
+        console.error("get_lesson error:", err);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
 
-            } catch (err) {
-                console.error(err);
-                return res.status(500).json({ message: "Server error" });
-            }
-        };
-
-//-------------------------------------------------------------------------------------------------------------------
+// -------- CREATE LESSON --------
 export const create_lesson = async (req, res) => {
     const { link_id, title, description, files } = req.body;
 
-    if (!link_id || !title || !Array.isArray(files) || !description) {
-        return res.status(400).json({ message: 'link_id та title обов\'язкові' });
+    if (!link_id || !title || !description) {
+        return res.status(400).json({ message: "link_id, title та description обов'язкові" });
     }
 
     try {
-        // Перевіряємо, чи існує урок з таким link_id
-        const existingLesson = await createAnsver(link_id);
+        const existingLesson = await createAnswer(link_id);
         if (existingLesson) {
-            return res.status(409).json({ message: 'Lesson with this link_id already exists' });
+            return res.status(409).json({ message: "Lesson with this link_id already exists" });
         }
 
-        // Якщо файли передані, конвертуємо їх у JSON рядок
-        const filesJson = files ? JSON.stringify(files) : null;
+        const filesJson = JSON.stringify(Array.isArray(files) ? files : []);
 
-        const sql = 'INSERT INTO lessons (link_id, title, description, files) VALUES (?, ?, ?, ?)';
+        const sql = "INSERT INTO lessons (link_id, title, description, files) VALUES (?, ?, ?, ?)";
         await new Promise((resolve, reject) => {
-            db.run(sql, [link_id, title, description || null, filesJson], function(err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(this.lastID);
-                }
+            db.run(sql, [link_id, title, description, filesJson], function (err) {
+                if (err) reject(err);
+                else resolve(this.lastID);
             });
         });
 
-        return res.status(201).json({ message: 'Lesson created successfully' });
+        return res.status(201).json({ message: "Lesson created successfully" });
     } catch (err) {
         console.error("Помилка створення уроку:", err);
         return res.status(500).json({ message: "Server error" });
     }
-}
-    
-//-------------------------------------------------------------------------------------------------------------------
+};
 
+// -------- EDIT LESSON --------
 export const edit_lesson = async (req, res) => {
     const { link_id, title, description, files } = req.body;
 
-    if (!link_id || !title || !Array.isArray(files) || !description) {
-        return res.status(400).json({ message: 'link_id та title обов\'язкові' });
+    if (!link_id || !title || !description) {
+        return res.status(400).json({ message: "link_id, title та description обов'язкові" });
     }
 
     try {
-        // Перевіряємо, чи існує урок з таким link_id
-        const existingLesson = await createAnsver(link_id);
+        const existingLesson = await createAnswer(link_id);
         if (!existingLesson) {
-            return res.status(404).json({ message: 'Lesson with this link_id not found' });
+            return res.status(404).json({ message: "Lesson with this link_id not found" });
         }
 
-        // Якщо файли передані, конвертуємо їх у JSON рядок
-        const filesJson = files ? JSON.stringify(files) : null;
+        const filesJson = JSON.stringify(Array.isArray(files) ? files : []);
 
-        const sql = 'UPDATE lessons SET title = ?, description = ?, files = ? WHERE link_id = ?';
+        const sql = "UPDATE lessons SET title = ?, description = ?, files = ? WHERE link_id = ?";
         await new Promise((resolve, reject) => {
-            db.run(sql, [title, description || null, filesJson, link_id], function(err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(this.changes);
-                }
+            db.run(sql, [title, description, filesJson, link_id], function (err) {
+                if (err) reject(err);
+                else resolve(this.changes);
             });
         });
 
-        return res.status(200).json({ message: 'Lesson updated successfully' });
+        return res.status(200).json({ message: "Lesson updated successfully" });
     } catch (err) {
         console.error("Помилка оновлення уроку:", err);
         return res.status(500).json({ message: "Server error" });
     }
-}
+};
 
-//-------------------------------------------------------------------------------------------------------------------
-
-
+// -------- DELETE LESSON --------
 export const delete_lesson = async (req, res) => {
-    const link_id = req.params.id;
+    const { link_id } = req.body; // 🔄 змінив на body для консистентності
 
     if (!link_id) {
-        return res.status(400).json({ message: 'link_id обов\'язковий' });
+        return res.status(400).json({ message: "link_id обов'язковий" });
     }
 
     try {
-        // Перевіряємо, чи існує урок з таким link_id
-        const existingLesson = await createAnsver(link_id);
+        const existingLesson = await createAnswer(link_id);
         if (!existingLesson) {
-            return res.status(404).json({ message: 'Lesson with this link_id not found' });
+            return res.status(404).json({ message: "Lesson with this link_id not found" });
         }
 
-        const sql = 'DELETE FROM lessons WHERE link_id = ?';
+        const sql = "DELETE FROM lessons WHERE link_id = ?";
         await new Promise((resolve, reject) => {
-            db.run(sql, [link_id], function(err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(this.changes);
-                }
+            db.run(sql, [link_id], function (err) {
+                if (err) reject(err);
+                else resolve(this.changes);
             });
         });
 
-        return res.status(200).json({ message: 'Lesson deleted successfully' });
+        return res.status(200).json({ message: "Lesson deleted successfully" });
     } catch (err) {
         console.error("Помилка видалення уроку:", err);
         return res.status(500).json({ message: "Server error" });
     }
-}
-
+};

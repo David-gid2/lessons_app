@@ -12,7 +12,7 @@ export const Main = ({ lessons, onFileClick }) => {
           <h1>{lesson.tittle}</h1>
 
           {lesson.files.map((file) => (
-            <div className="box" key={file.id}>
+            <div className="box" key={file.id} onClick={() => onFileClick(file.file_url)}>
               <div className="Img">
                 <img src={file.icon_url} alt={file.tittle} className="brain" />
               </div>

@@ -12,7 +12,7 @@ export const App = () => {
   const [answer, setAnswer] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedUrl, setSelectedUrl] = useState(null); // 👈 тут зберігаємо саме посилання
+  const [selectedUrl, setSelectedUrl] = useState(null);
 
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
@@ -28,7 +28,7 @@ export const App = () => {
   const sendData = async () => {
   try {
     const response = await axios.post("/api/lesson/get_lesson", {
-      tg_id: user?.id,
+      user_id: user?.id,
       link_id: startParam,
     });
 

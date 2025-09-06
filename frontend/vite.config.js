@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     host: true, // дозволяє доступ не тільки з localhost
     port: 5000,
-    origin: 'https://db2dacfba014.ngrok-free.app',
+    origin: 'https://4a530451158b.ngrok-free.app',
     proxy: {
       '/api': 'http://localhost:4000'
     },

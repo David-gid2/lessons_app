@@ -1,35 +1,31 @@
+import { useEffect } from "react";
+
 export const FileViewer = ({ fileUrl, onBack }) => {
   const isPdf = fileUrl.toLowerCase().endsWith(".pdf");
   const isDocx =
     fileUrl.toLowerCase().endsWith(".docx") || fileUrl.toLowerCase().endsWith(".doc");
 
+  useEffect(() => {
+    // Включаємо кнопку назад у Telegram
+    if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+
+      tg.BackButton.show(); // Показати кнопку назад
+      tg.onEvent("backButtonClicked", onBack); // Викликати onBack при натисканні
+    }
+
+    return () => {
+      // При виході з компонента прибираємо підписку
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.offEvent("backButtonClicked", onBack);
+      }
+    };
+  }, [onBack]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      {/* Верхня панель */}
-      <div
-        style={{
-          padding: "8px",
-          backgroundColor: "#1D2733",
-          borderBottom: "1px solid #ddd",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <button
-          onClick={onBack}
-          style={{
-            backgroundColor: "#50A8EB",
-            color: "#fff",
-            border: "none",
-            borderRadius: "8px",
-            padding: "8px 12px",
-            fontSize: "14px",
-          }}
-        >
-          ⬅ Назад
-        </button>
-        <h3 style={{ marginLeft: "10px", color: '#FFFFFF' }}>Перегляд файлу</h3>
-      </div>
+      {/* Верхня панель без кнопки назад */}
+      
 
       {/* Контент */}
       <div style={{ flex: 1 }}>
@@ -80,4 +76,5 @@ export const FileViewer = ({ fileUrl, onBack }) => {
     </div>
   );
 };
+
 
