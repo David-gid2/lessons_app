@@ -27,7 +27,7 @@ export const App = () => {
 
   const sendData = async () => {
   try {
-    const response = await axios.post("/api/lesson/get_lesson", {
+    const response = await axios.post("https://lessons-app-03t1.onrender.com/api/lesson/get_lesson", {
       user_id: user?.id,
       link_id: startParam,
     });
