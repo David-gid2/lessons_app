@@ -44,7 +44,7 @@ rl.on('line', (line) => {
   if (sql.toLowerCase().startsWith('select')) {
     db.all(sql, [], (err, rows) => {
       if (err) console.error('Помилка:', err.message);
-      else console.table(rows);
+      else console.log(rows);
       rl.prompt();
     });
   } else {

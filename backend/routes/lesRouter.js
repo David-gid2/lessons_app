@@ -8,5 +8,5 @@ lesRouter.post("/get_lesson", get_lesson);
 lesRouter.get("/get_lesson", checkAdminToken, get_lesson);
 lesRouter.post("/create_lesson", checkAdminToken, create_lesson);
 lesRouter.put("/edit_lesson", checkAdminToken, edit_lesson);
-lesRouter.delete("/:id", checkAdminToken, delete_lesson);
+lesRouter.delete("/delete_lesson", checkAdminToken, delete_lesson);
 export default lesRouter;

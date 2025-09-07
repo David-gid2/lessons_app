@@ -100,31 +100,66 @@ export const create_lesson = async (req, res) => {
 
 // -------- EDIT LESSON --------
 export const edit_lesson = async (req, res) => {
-    const { link_id, title, description, files } = req.body;
+    const lessons = req.body;
 
-    if (!link_id || !title || !description) {
-        return res.status(400).json({ message: "link_id, title та description обов'язкові" });
+    if (!Array.isArray(lessons) || lessons.length === 0) {
+        return res.status(400).json({ message: "Масив уроків обов'язковий" });
     }
 
     try {
-        const existingLesson = await createAnswer(link_id);
-        if (!existingLesson) {
-            return res.status(404).json({ message: "Lesson with this link_id not found" });
-        }
-
-        const filesJson = JSON.stringify(Array.isArray(files) ? files : []);
-
-        const sql = "UPDATE lessons SET title = ?, description = ?, files = ? WHERE link_id = ?";
+        // Починаємо транзакцію
         await new Promise((resolve, reject) => {
-            db.run(sql, [title, description, filesJson, link_id], function (err) {
+            db.run("BEGIN TRANSACTION", (err) => {
                 if (err) reject(err);
-                else resolve(this.changes);
+                else resolve();
             });
         });
 
-        return res.status(200).json({ message: "Lesson updated successfully" });
+        // Видаляємо всі старі уроки
+        await new Promise((resolve, reject) => {
+            db.run("DELETE FROM lessons", (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        // Вставляємо нові уроки без id (авто-генерація)
+        const insertSql = `
+            INSERT INTO lessons (day, tittle, files, link_id)
+            VALUES (?, ?, ?, ?)
+        `;
+
+        for (const lesson of lessons) {
+            const { day, tittle, files, link_id } = lesson;
+
+            if (!link_id || !tittle) continue;
+
+            const filesJson = JSON.stringify(Array.isArray(files) ? files : []);
+
+            await new Promise((resolve, reject) => {
+                db.run(insertSql, [day || null, tittle, filesJson, link_id], function(err) {
+                    if (err) reject(err);
+                    else resolve(this.lastID); // повертає згенерований id
+                });
+            });
+        }
+
+        // Завершуємо транзакцію
+        await new Promise((resolve, reject) => {
+            db.run("COMMIT", (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        return res.status(200).json({ message: "Уроки повністю замінено з авто-генерацією id" });
     } catch (err) {
-        console.error("Помилка оновлення уроку:", err);
+        // rollback у випадку помилки
+        await new Promise((resolve) => {
+            db.run("ROLLBACK", () => resolve());
+        });
+
+        console.error("Помилка заміни уроків:", err);
         return res.status(500).json({ message: "Server error" });
     }
 };
