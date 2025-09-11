@@ -5,6 +5,7 @@ import "./App.css";
 import { Main } from "./components/Main";
 import { FileViewer } from "./components/FileViewer";
 import { NoLessonPage } from "./components/NoLessonPage";
+import { InfiniteCounter } from "./components/Time";
 
 export const App = () => {
   const [user, setUser] = useState(null);
@@ -55,7 +56,9 @@ export const App = () => {
     }
   }, [user, startParam]);
 
-  if (loading) return <p>Завантаження...</p>;
+  const time = InfiniteCounter();
+
+  if (loading) return <p className="load">Продолжается загрузка ({time})</p>;
   if (error) return <p>{error}</p>;
 
   const hasLesson =
