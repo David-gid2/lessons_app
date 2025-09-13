@@ -31,6 +31,7 @@ export const App = () => {
     const response = await axios.post("https://lessons-app-03t1.onrender.com/api/lesson/get_lesson", {
       user_id: user?.id,
       link_id: startParam,
+      hash: window.Telegram.WebApp.initData,
     });
 
     setAnswer(response.data);

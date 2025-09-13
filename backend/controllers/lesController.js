@@ -1,11 +1,10 @@
 import db from "../db/connectdb.js";
-import createAnswer from "./createAnsver.js"; // залишив твою назву, але краще виправити файл
+import createAnswer from "./createAnsver.js"; 
 import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-// ⚠️ Токен і чат-айді беремо з .env
 const TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT_ID = parseInt(process.env.TELEGRAM_CHAT_ID, 10);
 
@@ -38,7 +37,7 @@ export const get_lesson = async (req, res) => {
         const link_id = req.body.link_id;
 
         if (!Number.isInteger(user_id) || !link_id) {
-            return res.status(400).json({ message: "Некоректний user_id або відсутній link_id" });
+            return res.status(400).json({ message: "Некоректний user_id або link_id" });
         }
 
         const isValid = await validUser(user_id);
